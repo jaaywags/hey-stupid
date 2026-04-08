@@ -86,7 +86,7 @@ jobs:
         shell: pwsh
         run: |
           $publishDir = Resolve-Path ./publish
-          $files = Get-ChildItem -Path $publishDir -File -Recurse | Where-Object { $_.Name -ne 'HeyStupid.exe' }
+          $files = Get-ChildItem -Path $publishDir -File -Recurse
 
           $fragments = @()
           $componentRefs = @()
