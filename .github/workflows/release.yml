@@ -68,6 +68,8 @@ jobs:
 
       - name: Install WiX Toolset
         run: dotnet tool install --global wix --version 7.0.0
+        env:
+          WIX_ACCEPT_OSMF_EULA: "true"
 
       - name: Harvest publish output
         shell: pwsh
@@ -111,6 +113,8 @@ jobs:
 
       - name: Build MSI
         shell: pwsh
+        env:
+          WIX_ACCEPT_OSMF_EULA: "true"
         run: |
           $publishDir = (Resolve-Path ./publish).Path
           $version = "${{ steps.version.outputs.VERSION }}"
