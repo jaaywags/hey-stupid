@@ -1,0 +1,160 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+  build-installer:
+    name: Build MSI Installer
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Version: $version"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Publish
+        run: >
+          dotnet publish HeyStupid/HeyStupid.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output ./publish
+          -p:PublishSingleFile=false
+
+      - name: Install WiX Toolset
+        run: dotnet tool install --global wix --version 7.0.0
+
+      - name: Harvest publish output
+        shell: pwsh
+        run: |
+          $publishDir = Resolve-Path ./publish
+          $files = Get-ChildItem -Path $publishDir -File -Recurse | Where-Object { $_.Name -ne 'HeyStupid.exe' }
+
+          $fragments = @()
+          $componentRefs = @()
+          $counter = 1
+
+          foreach ($file in $files) {
+              $relativePath = $file.FullName.Substring($publishDir.Path.Length + 1)
+              $componentId = "comp_$counter"
+              $fileId = "file_$counter"
+
+              $fragments += @"
+          <Component Id="$componentId" Directory="INSTALLFOLDER" Guid="*">
+              <File Id="$fileId" Source="!(bindpath.PublishDir)\$relativePath" KeyPath="yes" />
+          </Component>
+          "@
+              $componentRefs += "        <ComponentRef Id=""$componentId"" />"
+              $counter++
+          }
+
+          # Build the harvested fragment file
+          $wxs = @"
+          <?xml version="1.0" encoding="UTF-8"?>
+          <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+              <Fragment>
+                  <ComponentGroup Id="PublishOutput">
+          $($componentRefs -join "`n")
+                  </ComponentGroup>
+          $($fragments -join "`n")
+              </Fragment>
+          </Wix>
+          "@
+
+          $wxs | Out-File -FilePath ./installer/HarvestedFiles.wxs -Encoding UTF8
+          Write-Host "Harvested $($files.Count) files"
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          $publishDir = (Resolve-Path ./publish).Path
+          $version = "${{ steps.version.outputs.VERSION }}"
+
+          # Ensure version has exactly 3 parts for MSI
+          $parts = $version.Split('.')
+          while ($parts.Length -lt 3) { $parts += '0' }
+          $msiVersion = ($parts[0..2]) -join '.'
+
+          wix build `
+            -d ProductVersion="$msiVersion" `
+            -bindpath "PublishDir=$publishDir" `
+            ./installer/HeyStupid.wxs `
+            ./installer/HarvestedFiles.wxs `
+            -o ./output/HeyStupid-$version-x64.msi
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-installer
+          path: ./output/*.msi
+
+  release:
+    name: Create GitHub Release
+    needs: build-installer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Download MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-installer
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Hey Stupid v${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          files: ./artifacts/*.msi

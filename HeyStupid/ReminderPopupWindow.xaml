@@ -1,0 +1,61 @@
+<Window
+    x:Class="HeyStupid.ReminderPopupWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:HeyStupid"
+    Title="Hey Stupid!">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Padding="32" RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="HEY STUPID!"
+                       Style="{StaticResource TitleTextBlockStyle}"
+                       FontWeight="Bold"
+                       Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+            <TextBlock x:Name="AttemptText"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Visibility="Collapsed" />
+        </StackPanel>
+
+        <!-- Reminder Title -->
+        <TextBlock x:Name="ReminderTitle"
+                   Grid.Row="1"
+                   Style="{StaticResource SubtitleTextBlockStyle}"
+                   TextWrapping="Wrap" />
+
+        <!-- Reminder Message -->
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto">
+            <TextBlock x:Name="ReminderMessage"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </ScrollViewer>
+
+        <!-- Time Info -->
+        <TextBlock x:Name="TimeText"
+                   Grid.Row="3"
+                   Style="{StaticResource CaptionTextBlockStyle}"
+                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                   HorizontalAlignment="Center" />
+
+        <!-- Acknowledge Button -->
+        <local:HandCursorButton x:Name="AcknowledgeButton"
+                Grid.Row="4"
+                Content="I Got It"
+                Style="{StaticResource AccentButtonStyle}"
+                HorizontalAlignment="Stretch"
+                Height="40"
+                Click="AcknowledgeButton_Click" />
+    </Grid>
+</Window>

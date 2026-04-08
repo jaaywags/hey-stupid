@@ -1,0 +1,154 @@
+<Window
+    x:Class="HeyStupid.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:HeyStupid.Models"
+    xmlns:local="using:HeyStupid"
+    Title="Hey Stupid - Reminders">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.Resources>
+            <local:BoolToVisibilityConverter x:Key="BoolToVis" />
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar Area -->
+        <Grid Grid.Row="0" Padding="24,20,24,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Hey Stupid"
+                           Style="{StaticResource TitleTextBlockStyle}"
+                           FontWeight="Bold" />
+                <TextBlock x:Name="SubtitleText"
+                           Text="No upcoming reminders"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                        VerticalAlignment="Center">
+                <Button x:Name="AddButton" Click="AddButton_Click"
+                        Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="New Reminder">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE710;" FontSize="14" />
+                        <TextBlock Text="New Reminder" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="SettingsButton" Click="SettingsButton_Click"
+                        ToolTipService.ToolTip="Settings">
+                    <FontIcon Glyph="&#xE713;" FontSize="16" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Reminder List -->
+        <Grid Grid.Row="1" Padding="24,0,24,24">
+            <!-- Empty State -->
+            <StackPanel x:Name="EmptyState"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Spacing="12"
+                        Visibility="Visible">
+                <FontIcon Glyph="&#xE77B;" FontSize="48"
+                          HorizontalAlignment="Center"
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="No reminders yet"
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           HorizontalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="Click 'New Reminder' to get started"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           HorizontalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </StackPanel>
+
+            <!-- Reminder ListView -->
+            <ListView x:Name="ReminderListView"
+                      Visibility="Collapsed"
+                      SelectionMode="None"
+                      IsItemClickEnabled="False">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Reminder">
+                        <Grid Padding="12,14" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Status Indicator -->
+                            <Ellipse Grid.Column="0" Width="10" Height="10"
+                                     VerticalAlignment="Center"
+                                     Fill="{ThemeResource SystemAccentColor}" />
+
+                            <!-- Info -->
+                            <StackPanel Grid.Column="1" Spacing="2"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind Title}"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="{x:Bind CategoryName}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemAccentColor}" />
+                                    <TextBlock Text="{x:Bind RecurrenceSummary}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{x:Bind NextDueSummary}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Toggle Active -->
+                            <ToggleSwitch Grid.Column="2"
+                                          IsOn="{x:Bind IsActive, Mode=OneWay}"
+                                          VerticalAlignment="Center"
+                                          Toggled="ReminderToggle_Toggled"
+                                          OnContent="" OffContent=""
+                                          MinWidth="0" />
+
+                            <!-- Acknowledge -->
+                            <local:HandCursorButton Grid.Column="3"
+                                        Click="AckButton_Click"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        VerticalAlignment="Center"
+                                        Padding="10,4"
+                                        Visibility="{Binding IsWaitingForAcknowledgment, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE73E;" FontSize="12" />
+                                    <TextBlock Text="Ack" />
+                                </StackPanel>
+                            </local:HandCursorButton>
+
+                            <!-- Actions -->
+                            <StackPanel Grid.Column="4" Orientation="Horizontal"
+                                        Spacing="4" VerticalAlignment="Center">
+                                <Button Click="EditButton_Click"
+                                        ToolTipService.ToolTip="Edit"
+                                        Background="Transparent" BorderThickness="0">
+                                    <FontIcon Glyph="&#xE70F;" FontSize="14" />
+                                </Button>
+                                <Button Click="DeleteButton_Click"
+                                        ToolTipService.ToolTip="Delete"
+                                        Background="Transparent" BorderThickness="0">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="14"
+                                              Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </Grid>
+</Window>

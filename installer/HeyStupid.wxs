@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Package Name="Hey Stupid"
+             Manufacturer="Jordan Wagner"
+             Version="$(ProductVersion)"
+             UpgradeCode="F8A3B1C2-D4E5-6789-ABCD-0123456789EF"
+             Compressed="yes"
+             InstallerVersion="500">
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of Hey Stupid is already installed." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <Feature Id="Complete" Title="Hey Stupid" Level="1">
+            <ComponentGroupRef Id="PublishOutput" />
+            <ComponentRef Id="StartMenuShortcut" />
+            <ComponentRef Id="DesktopShortcut" />
+        </Feature>
+
+        <!-- Install to Program Files -->
+        <StandardDirectory Id="ProgramFiles6432Folder">
+            <Directory Id="INSTALLFOLDER" Name="HeyStupid">
+                <Component Id="MainExecutable" Guid="A1B2C3D4-E5F6-7890-ABCD-111111111111">
+                    <File Id="HeyStupidExe" Source="!(bindpath.PublishDir)\HeyStupid.exe" KeyPath="yes" />
+                </Component>
+            </Directory>
+        </StandardDirectory>
+
+        <!-- Start Menu Shortcut -->
+        <StandardDirectory Id="ProgramMenuFolder">
+            <Directory Id="ApplicationProgramsFolder" Name="Hey Stupid">
+                <Component Id="StartMenuShortcut" Guid="A1B2C3D4-E5F6-7890-ABCD-222222222222">
+                    <Shortcut Id="StartMenuShortcut"
+                              Name="Hey Stupid"
+                              Description="Reminder application"
+                              Target="[INSTALLFOLDER]HeyStupid.exe"
+                              WorkingDirectory="INSTALLFOLDER" />
+                    <RemoveFolder Id="CleanStartMenu" On="uninstall" />
+                    <RegistryValue Root="HKCU"
+                                   Key="Software\HeyStupid"
+                                   Name="StartMenuShortcut"
+                                   Type="integer"
+                                   Value="1"
+                                   KeyPath="yes" />
+                </Component>
+            </Directory>
+        </StandardDirectory>
+
+        <!-- Desktop Shortcut -->
+        <StandardDirectory Id="DesktopFolder">
+            <Component Id="DesktopShortcut" Guid="A1B2C3D4-E5F6-7890-ABCD-333333333333">
+                <Shortcut Id="DesktopShortcut"
+                          Name="Hey Stupid"
+                          Description="Reminder application"
+                          Target="[INSTALLFOLDER]HeyStupid.exe"
+                          WorkingDirectory="INSTALLFOLDER" />
+                <RegistryValue Root="HKCU"
+                               Key="Software\HeyStupid"
+                               Name="DesktopShortcut"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes" />
+            </Component>
+        </StandardDirectory>
+    </Package>
+
+    <!-- Harvested publish output (all files except the main exe) -->
+    <Fragment>
+        <ComponentGroup Id="PublishOutput" Directory="INSTALLFOLDER" />
+    </Fragment>
+</Wix>
