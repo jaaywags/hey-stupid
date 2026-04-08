@@ -5,6 +5,7 @@
         <RootNamespace>HeyStupid.Tests</RootNamespace>
         <Nullable>enable</Nullable>
         <ImplicitUsings>disable</ImplicitUsings>
+        <Platforms>x64</Platforms>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <UseWinUI>true</UseWinUI>
