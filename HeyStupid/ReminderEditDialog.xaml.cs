@@ -205,7 +205,7 @@ namespace HeyStupid
                 return nextDue;
             }
 
-            return ReminderScheduler.CalculateInitialDue(new Reminder
+            return RecurrenceCalculator.CalculateInitialDue(new Reminder
             {
                 RecurrenceType = recurrence,
                 RecurrenceInterval = (int)IntervalBox.Value,

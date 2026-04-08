@@ -16,7 +16,7 @@ namespace HeyStupid.Tests
                 RecurrenceType = RecurrenceType.Once
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, DateTime.Now);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, DateTime.Now);
 
             Assert.Null(result);
         }
@@ -31,7 +31,7 @@ namespace HeyStupid.Tests
                 RecurrenceInterval = 15
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, from);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, from);
 
             Assert.NotNull(result);
             Assert.Equal(from.AddMinutes(15), result.Value);
@@ -47,7 +47,7 @@ namespace HeyStupid.Tests
                 RecurrenceInterval = 2
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, from);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, from);
 
             Assert.NotNull(result);
             Assert.Equal(from.AddHours(2), result.Value);
@@ -65,7 +65,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 30
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, from);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, from);
 
             Assert.NotNull(result);
             var expected = new DateTime(2026, 4, 11, 9, 30, 0);
@@ -85,7 +85,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 0
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, from);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, from);
 
             Assert.NotNull(result);
             // Next Friday is April 10, 2026
@@ -107,7 +107,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 0
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, from);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, from);
 
             Assert.NotNull(result);
             // Next matching day after Wed at 10am: should be next Monday (Apr 13) at 8am
@@ -124,7 +124,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 59
             };
 
-            var result = ReminderScheduler.CalculateInitialDue(reminder);
+            var result = RecurrenceCalculator.CalculateInitialDue(reminder);
 
             // Should be today if time hasn't passed, or tomorrow
             Assert.True(result >= DateTime.Now.Date);
@@ -140,7 +140,7 @@ namespace HeyStupid.Tests
             };
 
             var before = DateTime.Now;
-            var result = ReminderScheduler.CalculateInitialDue(reminder);
+            var result = RecurrenceCalculator.CalculateInitialDue(reminder);
 
             Assert.True(result > before);
             Assert.True(result <= before.AddMinutes(11));
@@ -156,7 +156,7 @@ namespace HeyStupid.Tests
             };
 
             var before = DateTime.Now;
-            var result = ReminderScheduler.CalculateInitialDue(reminder);
+            var result = RecurrenceCalculator.CalculateInitialDue(reminder);
 
             Assert.True(result > before);
             Assert.True(result <= before.AddHours(2));
@@ -173,7 +173,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 0
             };
 
-            var result = ReminderScheduler.CalculateInitialDue(reminder);
+            var result = RecurrenceCalculator.CalculateInitialDue(reminder);
 
             // Should be either today (if midnight hasn't passed... unlikely) or tomorrow
             Assert.True(result >= DateTime.Now.Date);
@@ -190,7 +190,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 59
             };
 
-            var result = ReminderScheduler.CalculateInitialDue(reminder);
+            var result = RecurrenceCalculator.CalculateInitialDue(reminder);
 
             Assert.True(result > DateTime.Now);
         }
@@ -214,7 +214,7 @@ namespace HeyStupid.Tests
                 ReminderMinute = 0
             };
 
-            var result = ReminderScheduler.CalculateNextDue(reminder, from);
+            var result = RecurrenceCalculator.CalculateNextDue(reminder, from);
 
             Assert.NotNull(result);
             Assert.Equal(expectedDay, result.Value.DayOfWeek);

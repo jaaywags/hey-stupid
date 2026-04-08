@@ -27,7 +27,7 @@ namespace HeyStupid
             {
                 foreach (var reminder in _missedReminders)
                 {
-                    await _scheduler.AcknowledgeAsync(reminder.Id).ConfigureAwait(false);
+                    await _scheduler.AcknowledgeAsync(reminder.Id).ConfigureAwait(true);
                 }
             }
             finally

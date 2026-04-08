@@ -172,7 +172,7 @@ namespace HeyStupid
                 reminder.IsActive = toggle.IsOn;
                 if (toggle.IsOn && reminder.NextDue.HasValue == false)
                 {
-                    reminder.NextDue = ReminderScheduler.CalculateInitialDue(reminder);
+                    reminder.NextDue = RecurrenceCalculator.CalculateInitialDue(reminder);
                 }
                 if (toggle.IsOn == false)
                 {

@@ -1,14 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
-        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+        <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>HeyStupid.Tests</RootNamespace>
         <Nullable>enable</Nullable>
         <ImplicitUsings>disable</ImplicitUsings>
         <Platforms>x64</Platforms>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <UseWinUI>true</UseWinUI>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
@@ -19,6 +17,9 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\HeyStupid\HeyStupid.csproj" />
+        <Compile Include="..\HeyStupid\Models\Reminder.cs" Link="Models\Reminder.cs" />
+        <Compile Include="..\HeyStupid\Models\ReminderSource.cs" Link="Models\ReminderSource.cs" />
+        <Compile Include="..\HeyStupid\Models\ReminderCategory.cs" Link="Models\ReminderCategory.cs" />
+        <Compile Include="..\HeyStupid\Services\RecurrenceCalculator.cs" Link="Services\RecurrenceCalculator.cs" />
     </ItemGroup>
 </Project>
