@@ -78,6 +78,7 @@ jobs:
           --self-contained true
           --output ./publish
           -p:PublishSingleFile=false
+          -p:WindowsAppSDKSelfContained=true
 
       - name: Install WiX Toolset
         run: dotnet tool install --global wix --version 7.0.0

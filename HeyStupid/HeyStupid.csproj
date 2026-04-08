@@ -8,6 +8,7 @@
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <UseWinUI>true</UseWinUI>
         <WindowsPackageType>None</WindowsPackageType>
+        <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <Nullable>enable</Nullable>
