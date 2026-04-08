@@ -41,8 +41,6 @@ jobs:
     name: Build MSI Installer
     needs: test
     runs-on: windows-latest
-    env:
-      WIX_ACCEPT_OSMF_EULA: "true"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -136,6 +134,7 @@ jobs:
           $msiVersion = ($parts[0..2]) -join '.'
 
           wix build `
+            -acceptEula wix7 `
             -d ProductVersion="$msiVersion" `
             -bindpath "PublishDir=$publishDir" `
             ./installer/HeyStupid.wxs `
