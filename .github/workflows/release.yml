@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g., 0.0.1-test)'
+        required: false
+        default: '0.0.1-test'
 
 permissions:
   contents: write
@@ -35,6 +41,8 @@ jobs:
     name: Build MSI Installer
     needs: test
     runs-on: windows-latest
+    env:
+      WIX_ACCEPT_OSMF_EULA: "true"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,12 +53,19 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Extract version from tag
+      - name: Extract version
         id: version
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          $version = $tag -replace '^v', ''
+          $input = "${{ github.event.inputs.version }}"
+          if ($tag -match '^v') {
+            $version = $tag -replace '^v', ''
+          } elseif ($input) {
+            $version = $input
+          } else {
+            $version = "0.0.1-test"
+          }
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Version: $version"
 
@@ -68,8 +83,6 @@ jobs:
 
       - name: Install WiX Toolset
         run: dotnet tool install --global wix --version 7.0.0
-        env:
-          WIX_ACCEPT_OSMF_EULA: "true"
 
       - name: Harvest publish output
         shell: pwsh
@@ -113,8 +126,6 @@ jobs:
 
       - name: Build MSI
         shell: pwsh
-        env:
-          WIX_ACCEPT_OSMF_EULA: "true"
         run: |
           $publishDir = (Resolve-Path ./publish).Path
           $version = "${{ steps.version.outputs.VERSION }}"
@@ -144,9 +155,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: Extract version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          INPUT="${{ github.event.inputs.version }}"
+          if [[ "$GITHUB_REF_NAME" == v* ]]; then
+            echo "VERSION=$TAG" >> $GITHUB_OUTPUT
+          elif [[ -n "$INPUT" ]]; then
+            echo "VERSION=$INPUT" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=0.0.1-test" >> $GITHUB_OUTPUT
+          fi
 
       - name: Download MSI artifact
         uses: actions/download-artifact@v4
