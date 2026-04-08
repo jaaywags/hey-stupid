@@ -18,11 +18,7 @@
 
         <!-- Install to Program Files -->
         <StandardDirectory Id="ProgramFiles6432Folder">
-            <Directory Id="INSTALLFOLDER" Name="HeyStupid">
-                <Component Id="MainExecutable" Guid="A1B2C3D4-E5F6-7890-ABCD-111111111111">
-                    <File Id="HeyStupidExe" Source="!(bindpath.PublishDir)\HeyStupid.exe" KeyPath="yes" />
-                </Component>
-            </Directory>
+            <Directory Id="INSTALLFOLDER" Name="HeyStupid" />
         </StandardDirectory>
 
         <!-- Start Menu Shortcut -->
@@ -62,9 +58,4 @@
             </Component>
         </StandardDirectory>
     </Package>
-
-    <!-- Harvested publish output (all files except the main exe) -->
-    <Fragment>
-        <ComponentGroup Id="PublishOutput" Directory="INSTALLFOLDER" />
-    </Fragment>
 </Wix>
