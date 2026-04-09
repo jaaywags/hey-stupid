@@ -1,0 +1,138 @@
+<Window
+    x:Class="HeyStupid.ReminderEditWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Reminder">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto"
+                      Padding="28,24,28,12">
+            <StackPanel Spacing="16" MaxWidth="480">
+
+                <!-- Category -->
+                <ComboBox x:Name="CategoryBox"
+                          Header="Category"
+                          HorizontalAlignment="Stretch"
+                          PlaceholderText="(Uncategorized)"
+                          DisplayMemberPath="Name" />
+
+                <!-- Title -->
+                <TextBox x:Name="TitleBox"
+                         Header="Title"
+                         PlaceholderText="What should I remind you about?" />
+
+                <!-- Message -->
+                <TextBox x:Name="MessageBox"
+                         Header="Message (optional)"
+                         PlaceholderText="Additional details..."
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         MinHeight="80" />
+
+                <!-- Recurrence Type -->
+                <ComboBox x:Name="RecurrenceBox"
+                          Header="Repeat"
+                          HorizontalAlignment="Stretch"
+                          SelectionChanged="RecurrenceBox_SelectionChanged">
+                    <ComboBoxItem Content="One time" Tag="Once" />
+                    <ComboBoxItem Content="Every N minutes" Tag="EveryNMinutes" />
+                    <ComboBoxItem Content="Every N hours" Tag="Hourly" />
+                    <ComboBoxItem Content="Every N days" Tag="Daily" />
+                    <ComboBoxItem Content="Every N weeks" Tag="Weekly" />
+                    <ComboBoxItem Content="Every N months" Tag="Monthly" />
+                </ComboBox>
+
+                <!-- Interval -->
+                <NumberBox x:Name="IntervalBox"
+                           Header="Interval"
+                           Value="1"
+                           Minimum="1"
+                           Maximum="999"
+                           SpinButtonPlacementMode="Compact"
+                           Visibility="Collapsed" />
+
+                <!-- Day of Month (for Monthly) -->
+                <NumberBox x:Name="DayOfMonthBox"
+                           Header="Day of month"
+                           Value="1"
+                           Minimum="1"
+                           Maximum="31"
+                           SpinButtonPlacementMode="Compact"
+                           Visibility="Collapsed" />
+
+                <!-- Days of Week (for Weekly) -->
+                <StackPanel x:Name="DaysPanel" Spacing="8" Visibility="Collapsed">
+                    <TextBlock Text="Days" Style="{StaticResource CaptionTextBlockStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <ToggleButton x:Name="SunToggle" Content="Sun" MinWidth="48" />
+                        <ToggleButton x:Name="MonToggle" Content="Mon" MinWidth="48" />
+                        <ToggleButton x:Name="TueToggle" Content="Tue" MinWidth="48" />
+                        <ToggleButton x:Name="WedToggle" Content="Wed" MinWidth="48" />
+                        <ToggleButton x:Name="ThuToggle" Content="Thu" MinWidth="48" />
+                        <ToggleButton x:Name="FriToggle" Content="Fri" MinWidth="48" />
+                        <ToggleButton x:Name="SatToggle" Content="Sat" MinWidth="48" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Start Date & Time -->
+                <StackPanel x:Name="DateTimePanel" Spacing="12">
+                    <CalendarDatePicker x:Name="StartDatePicker"
+                                        Header="Start date"
+                                        HorizontalAlignment="Stretch"
+                                        PlaceholderText="Pick a date" />
+                    <TimePicker x:Name="TimePicker"
+                                Header="Time"
+                                ClockIdentifier="12HourClock" />
+                </StackPanel>
+
+                <NavigationViewItemSeparator />
+
+                <!-- Acknowledgment Section -->
+                <ToggleSwitch x:Name="AckToggle"
+                              Header="Require acknowledgment"
+                              IsOn="True"
+                              Toggled="AckToggle_Toggled" />
+
+                <StackPanel x:Name="AckSettings" Spacing="12">
+                    <NumberBox x:Name="MaxRetriesBox"
+                               Header="Nag up to N times"
+                               Value="3"
+                               Minimum="1"
+                               Maximum="50"
+                               SpinButtonPlacementMode="Compact" />
+
+                    <NumberBox x:Name="RetryIntervalBox"
+                               Header="Minutes between nags"
+                               Value="5"
+                               Minimum="1"
+                               Maximum="120"
+                               SpinButtonPlacementMode="Compact" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Save / Cancel -->
+        <Grid Grid.Row="1" Padding="28,12,28,20" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0"
+                    Content="Cancel"
+                    HorizontalAlignment="Stretch"
+                    Height="36"
+                    Click="CancelButton_Click" />
+            <Button Grid.Column="1"
+                    Content="Save"
+                    Style="{StaticResource AccentButtonStyle}"
+                    HorizontalAlignment="Stretch"
+                    Height="36"
+                    Click="SaveButton_Click" />
+        </Grid>
+    </Grid>
+</Window>

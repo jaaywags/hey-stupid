@@ -20,6 +20,8 @@ namespace HeyStupid
         private readonly JsonReminderStore _store;
         private readonly ReminderScheduler _scheduler;
         private bool _isRefreshing;
+        private SettingsWindow? _settingsWindow;
+        private readonly Dictionary<Guid, ReminderEditWindow> _editWindows = new();
 
         public MainWindow(SettingsService settingsService, JsonReminderStore store, ReminderScheduler scheduler)
         {
@@ -95,36 +97,46 @@ namespace HeyStupid
             }
         }
 
-        private async void AddButton_Click(object sender, RoutedEventArgs e)
+        private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new ReminderEditDialog(_settingsService.Settings);
-            dialog.XamlRoot = Content.XamlRoot;
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && dialog.Reminder != null)
+            var editWindow = new ReminderEditWindow(_settingsService.Settings);
+            editWindow.Closed += async (s, args) =>
             {
-                await _store.SaveAsync(dialog.Reminder).ConfigureAwait(true);
-                RefreshList();
-            }
+                if (editWindow.Result != null)
+                {
+                    await _store.SaveAsync(editWindow.Result).ConfigureAwait(true);
+                    RefreshList();
+                }
+            };
+            editWindow.Activate();
         }
 
-        private async void EditButton_Click(object sender, RoutedEventArgs e)
+        private void EditButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.DataContext is Reminder reminder)
             {
-                var dialog = new ReminderEditDialog(_settingsService.Settings, reminder);
-                dialog.XamlRoot = Content.XamlRoot;
-
-                var result = await dialog.ShowAsync();
-                if (result == ContentDialogResult.Primary && dialog.Reminder != null)
+                if (_editWindows.ContainsKey(reminder.Id))
                 {
-                    var edited = dialog.Reminder;
-                    edited.IsWaitingForAcknowledgment = false;
-                    edited.CurrentRetryCount = 0;
-                    edited.NextRetry = null;
-                    await _store.SaveAsync(edited).ConfigureAwait(true);
-                    RefreshList();
+                    _editWindows[reminder.Id].Activate();
+                    return;
                 }
+
+                var editWindow = new ReminderEditWindow(_settingsService.Settings, reminder);
+                _editWindows[reminder.Id] = editWindow;
+                editWindow.Closed += async (s, args) =>
+                {
+                    _editWindows.Remove(reminder.Id);
+                    if (editWindow.Result != null)
+                    {
+                        var edited = editWindow.Result;
+                        edited.IsWaitingForAcknowledgment = false;
+                        edited.CurrentRetryCount = 0;
+                        edited.NextRetry = null;
+                        await _store.SaveAsync(edited).ConfigureAwait(true);
+                        RefreshList();
+                    }
+                };
+                editWindow.Activate();
             }
         }
 
@@ -187,17 +199,25 @@ namespace HeyStupid
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            var settingsWindow = new SettingsWindow(_settingsService);
-            settingsWindow.Closed += async (s, args) =>
+            if (_settingsWindow != null)
             {
-                if (settingsWindow.SourcesChanged)
+                _settingsWindow.Activate();
+                return;
+            }
+
+            _settingsWindow = new SettingsWindow(_settingsService);
+            _settingsWindow.Closed += async (s, args) =>
+            {
+                var changed = _settingsWindow.SourcesChanged;
+                _settingsWindow = null;
+                if (changed)
                 {
                     _store.SetSources(_settingsService.Settings.ReminderSources);
                     await _store.LoadAsync().ConfigureAwait(true);
                     RefreshList();
                 }
             };
-            settingsWindow.Activate();
+            _settingsWindow.Activate();
         }
     }
 }

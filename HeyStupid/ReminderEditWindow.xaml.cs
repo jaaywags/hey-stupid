@@ -2,32 +2,29 @@ namespace HeyStupid
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using HeyStupid.Models;
     using HeyStupid.Services;
+    using Microsoft.UI.Windowing;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;
-    using Microsoft.UI.Xaml.Input;
+    using Windows.Graphics;
 
-    public sealed partial class ReminderEditDialog : ContentDialog
+    public sealed partial class ReminderEditWindow : Window
     {
         private readonly AppSettings _settings;
         private readonly Reminder? _existing;
 
-        public Reminder? Reminder { get; private set; }
+        public Reminder? Result { get; private set; }
 
-        public ReminderEditDialog(AppSettings settings, Reminder? existing = null)
+        public ReminderEditWindow(AppSettings settings, Reminder? existing = null)
         {
             _settings = settings;
             _existing = existing;
 
             InitializeComponent();
-
-            DialogScrollViewer.AddHandler(
-                UIElement.PointerWheelChangedEvent,
-                new PointerEventHandler(OnScrollViewerPointerWheelChanged),
-                true);
-
+            ConfigureWindow();
             LoadCategories();
             LoadDefaults();
 
@@ -35,6 +32,23 @@ namespace HeyStupid
             {
                 Title = "Edit Reminder";
                 PopulateFrom(_existing);
+            }
+        }
+
+        private void ConfigureWindow()
+        {
+            AppWindow.Resize(new SizeInt32(500, 680));
+            Title = "New Reminder";
+
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "trayicon.ico");
+            if (File.Exists(iconPath))
+            {
+                AppWindow.SetIcon(iconPath);
+            }
+
+            if (AppWindow.Presenter is OverlappedPresenter presenter)
+            {
+                presenter.IsMaximizable = false;
             }
         }
 
@@ -155,8 +169,7 @@ namespace HeyStupid
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-            var showDateTime = true;
-            DateTimePanel.Visibility = showDateTime ? Visibility.Visible : Visibility.Collapsed;
+            DateTimePanel.Visibility = Visibility.Visible;
         }
 
         private void RecurrenceBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -218,7 +231,6 @@ namespace HeyStupid
 
         private Guid ResolveSourceId()
         {
-            // If a category is selected and mapped to a folder, use that folder
             if (CategoryBox.SelectedItem is ReminderCategory category && category.FolderId.HasValue)
             {
                 var source = _settings.ReminderSources.FirstOrDefault(s => s.Id == category.FolderId.Value);
@@ -228,21 +240,18 @@ namespace HeyStupid
                 }
             }
 
-            // For existing reminders, keep the current source unless category changed
             if (_existing != null)
             {
                 return _existing.SourceId;
             }
 
-            // Fall back to default folder
             return _settings.GetDefaultSource().Id;
         }
 
-        private void OnSaveClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(TitleBox.Text))
             {
-                args.Cancel = true;
                 TitleBox.Header = "Title (required)";
                 return;
             }
@@ -250,7 +259,7 @@ namespace HeyStupid
             var recurrence = GetSelectedRecurrence();
             var selectedCategory = CategoryBox.SelectedItem as ReminderCategory;
 
-            Reminder = new Reminder
+            Result = new Reminder
             {
                 Id = _existing?.Id ?? Guid.NewGuid(),
                 Title = TitleBox.Text.Trim(),
@@ -271,16 +280,13 @@ namespace HeyStupid
                 SourceId = ResolveSourceId(),
                 NextDue = CalculateNextDueFromInputs(recurrence)
             };
+
+            Close();
         }
 
-        private void OnScrollViewerPointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is ScrollViewer scrollViewer)
-            {
-                var delta = e.GetCurrentPoint(scrollViewer).Properties.MouseWheelDelta;
-                scrollViewer.ChangeView(null, scrollViewer.VerticalOffset - delta, null);
-                e.Handled = true;
-            }
+            Close();
         }
     }
 }
