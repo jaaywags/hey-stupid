@@ -106,7 +106,6 @@ jobs:
             -d IconPath="$iconPath" `
             ./installer/HeyStupid.wxs `
             ./installer/HarvestedFiles.wxs `
-            -ext WixToolset.Util.wixext `
             -o ./output/HeyStupid-$version-x64.msi
 
       - name: Upload MSI artifact

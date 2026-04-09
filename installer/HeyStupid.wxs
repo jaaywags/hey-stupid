@@ -65,8 +65,7 @@
         </StandardDirectory>
 
         <!-- Launch after install -->
-        <Property Id="WixShellExecTarget" Value="[INSTALLFOLDER]HeyStupid.exe" />
-        <CustomAction Id="LaunchApp" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_X86" />
+        <CustomAction Id="LaunchApp" Directory="INSTALLFOLDER" ExeCommand="HeyStupid.exe" Impersonate="yes" Return="asyncNoWait" />
         <InstallExecuteSequence>
             <Custom Action="LaunchApp" After="InstallFinalize">NOT Installed AND NOT REMOVE</Custom>
         </InstallExecuteSequence>
