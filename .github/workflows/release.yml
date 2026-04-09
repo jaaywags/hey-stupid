@@ -98,11 +98,15 @@ jobs:
           while ($parts.Length -lt 3) { $parts += '0' }
           $msiVersion = ($parts[0..2]) -join '.'
 
+          $iconPath = (Resolve-Path ./publish/Assets/trayicon.ico).Path
+
           wix build `
             -acceptEula wix7 `
             -d ProductVersion="$msiVersion" `
+            -d IconPath="$iconPath" `
             ./installer/HeyStupid.wxs `
             ./installer/HarvestedFiles.wxs `
+            -ext WixToolset.Util.wixext `
             -o ./output/HeyStupid-$version-x64.msi
 
       - name: Upload MSI artifact
@@ -110,6 +114,16 @@ jobs:
         with:
           name: msi-installer
           path: ./output/*.msi
+
+      - name: Upload portable zip
+        shell: pwsh
+        run: Compress-Archive -Path ./publish/* -DestinationPath ./output/HeyStupid-${{ steps.version.outputs.VERSION }}-x64-portable.zip
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-zip
+          path: ./output/*.zip
 
   release:
     name: Create GitHub Release
@@ -137,6 +151,12 @@ jobs:
           name: msi-installer
           path: ./artifacts
 
+      - name: Download portable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-zip
+          path: ./artifacts
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -144,4 +164,6 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
-          files: ./artifacts/*.msi
+          files: |
+            ./artifacts/*.msi
+            ./artifacts/*.zip
