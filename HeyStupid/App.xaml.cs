@@ -20,6 +20,7 @@ namespace HeyStupid
         private ReminderScheduler _scheduler = null!;
         private TaskbarIcon? _trayIcon;
         private readonly Dictionary<Guid, ReminderPopupWindow> _openPopups = new();
+        private bool _isExiting;
 
         public static MainWindow MainWindow { get; private set; } = null!;
 
@@ -48,8 +49,11 @@ namespace HeyStupid
 
             MainWindow.AppWindow.Closing += (s, e) =>
             {
-                e.Cancel = true;
-                MainWindow.AppWindow.Hide();
+                if (_isExiting == false)
+                {
+                    e.Cancel = true;
+                    MainWindow.AppWindow.Hide();
+                }
             };
 
             // Check for missed reminders, then start the scheduler
@@ -59,32 +63,11 @@ namespace HeyStupid
 
         private void SetupTrayIcon()
         {
-            var showItem = new MenuFlyoutItem { Text = "Show" };
-            showItem.Click += (s, e) =>
-            {
-                MainWindow.AppWindow.Show();
-                MainWindow.Activate();
-            };
-
-            var exitItem = new MenuFlyoutItem { Text = "Exit" };
-            exitItem.Click += (s, e) =>
-            {
-                _scheduler.Stop();
-                _trayIcon?.Dispose();
-                MainWindow.Close();
-                Environment.Exit(0);
-            };
-
-            var flyout = new MenuFlyout();
-            flyout.Items.Add(showItem);
-            flyout.Items.Add(new MenuFlyoutSeparator());
-            flyout.Items.Add(exitItem);
-
             var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "trayicon.ico");
+
             _trayIcon = new TaskbarIcon
             {
-                ToolTipText = "Hey Stupid - Reminders",
-                ContextFlyout = flyout
+                ToolTipText = "Hey Stupid - Reminders"
             };
 
             if (File.Exists(iconPath))
@@ -92,14 +75,82 @@ namespace HeyStupid
                 _trayIcon.Icon = new Icon(iconPath);
             }
 
+            _trayIcon.NoLeftClickDelay = true;
+
             _trayIcon.LeftClickCommand = new RelayCommand(() =>
             {
-                MainWindow.AppWindow.Show();
-                MainWindow.Activate();
+                MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MainWindow.AppWindow.Show();
+                    MainWindow.Activate();
+                });
+            });
+
+            _trayIcon.RightClickCommand = new RelayCommand(() =>
+            {
+                ShowTrayContextMenu();
             });
 
             _trayIcon.ForceCreate();
         }
+
+        private void ShowTrayContextMenu()
+        {
+            const uint TPM_RIGHTALIGN = 0x0008;
+            const uint TPM_BOTTOMALIGN = 0x0020;
+            const uint TPM_RETURNCMD = 0x0100;
+            const uint MF_STRING = 0x0000;
+            const uint MF_SEPARATOR = 0x0800;
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
+
+            var hMenu = CreatePopupMenu();
+            AppendMenu(hMenu, MF_STRING, 1, "Show");
+            AppendMenu(hMenu, MF_SEPARATOR, 0, null);
+            AppendMenu(hMenu, MF_STRING, 2, "Exit");
+
+            GetCursorPos(out var point);
+            SetForegroundWindow(hwnd);
+
+            var cmd = TrackPopupMenuEx(hMenu, TPM_RIGHTALIGN | TPM_BOTTOMALIGN | TPM_RETURNCMD,
+                point.X, point.Y, hwnd, IntPtr.Zero);
+
+            DestroyMenu(hMenu);
+
+            if (cmd == 1)
+            {
+                MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    MainWindow.AppWindow.Show();
+                    MainWindow.Activate();
+                });
+            }
+            else if (cmd == 2)
+            {
+                ExitApplication();
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr CreatePopupMenu();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern bool AppendMenu(IntPtr hMenu, uint uFlags, nuint uIDNewItem, string? lpNewItem);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint TrackPopupMenuEx(IntPtr hMenu, uint fuFlags, int x, int y, IntPtr hwnd, IntPtr lptpm);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool DestroyMenu(IntPtr hMenu);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool GetCursorPos(out System.Drawing.Point lpPoint);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetActiveWindow();
 
         private async Task CheckMissedRemindersAsync()
         {
@@ -153,6 +204,23 @@ namespace HeyStupid
                 }
                 MainWindow.RefreshList();
             });
+        }
+
+        private void ExitApplication()
+        {
+            _isExiting = true;
+            _scheduler.Stop();
+
+            try { _trayIcon?.Dispose(); } catch { }
+
+            foreach (var popup in _openPopups.Values.ToList())
+            {
+                try { popup.Close(); } catch { }
+            }
+
+            try { MainWindow.Close(); } catch { }
+
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
 
         /// <summary>
