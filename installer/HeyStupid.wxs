@@ -11,7 +11,7 @@
         <MediaTemplate EmbedCab="yes" />
 
         <!-- Icon for Add/Remove Programs -->
-        <Icon Id="HeyStupidIcon" SourceFile="!(wix.IconPath)" />
+        <Icon Id="HeyStupidIcon" SourceFile="$(IconPath)" />
         <Property Id="ARPPRODUCTICON" Value="HeyStupidIcon" />
 
         <Feature Id="Complete" Title="Hey Stupid" Level="1">
