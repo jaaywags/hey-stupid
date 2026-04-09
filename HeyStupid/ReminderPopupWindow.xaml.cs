@@ -2,6 +2,7 @@ namespace HeyStupid
 {
     using System;
     using System.IO;
+    using System.Runtime.InteropServices;
     using HeyStupid.Models;
     using HeyStupid.Services;
     using Microsoft.UI;
@@ -27,8 +28,7 @@ namespace HeyStupid
             InitializeComponent();
             ConfigureWindow();
             PopulateContent();
-
-            // Cursor set via HandCursorButton in XAML
+            MessageBeep(0x00000030); // MB_ICONEXCLAMATION
         }
 
         private void ConfigureWindow()
@@ -92,5 +92,8 @@ namespace HeyStupid
             Acknowledged?.Invoke(_reminder.Id);
             Close();
         }
+
+        [DllImport("user32.dll")]
+        private static extern bool MessageBeep(uint type);
     }
 }
