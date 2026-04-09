@@ -67,7 +67,7 @@
         <!-- Launch after install -->
         <CustomAction Id="LaunchApp" Directory="INSTALLFOLDER" ExeCommand="HeyStupid.exe" Impersonate="yes" Return="asyncNoWait" />
         <InstallExecuteSequence>
-            <Custom Action="LaunchApp" After="InstallFinalize">NOT Installed AND NOT REMOVE</Custom>
+            <Custom Action="LaunchApp" After="InstallFinalize" Condition="NOT Installed AND NOT REMOVE" />
         </InstallExecuteSequence>
     </Package>
 </Wix>
