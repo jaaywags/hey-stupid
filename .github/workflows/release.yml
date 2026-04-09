@@ -79,6 +79,21 @@ jobs:
           --output ./publish
           -p:PublishSingleFile=false
           -p:WindowsAppSDKSelfContained=true
+          -p:Platform=x64
+
+      - name: List publish output
+        shell: pwsh
+        run: |
+          Write-Host "=== PRI files ==="
+          Get-ChildItem ./publish -Filter *.pri -Recurse | ForEach-Object { $_.FullName }
+          Write-Host "=== XBF files ==="
+          Get-ChildItem ./publish -Filter *.xbf -Recurse | ForEach-Object { $_.FullName }
+          Write-Host "=== EXE/DLL count ==="
+          $exes = (Get-ChildItem ./publish -Filter *.exe).Count
+          $dlls = (Get-ChildItem ./publish -Filter *.dll -Recurse).Count
+          Write-Host "$exes exe files, $dlls dll files"
+          Write-Host "=== Root files ==="
+          Get-ChildItem ./publish -File | Select-Object Name, Length | Format-Table
 
       - name: Install WiX Toolset
         run: dotnet tool install --global wix --version 7.0.0
@@ -102,6 +117,7 @@ jobs:
 
           wix build `
             -acceptEula wix7 `
+            -arch x64 `
             -d ProductVersion="$msiVersion" `
             -d IconPath="$iconPath" `
             ./installer/HeyStupid.wxs `
