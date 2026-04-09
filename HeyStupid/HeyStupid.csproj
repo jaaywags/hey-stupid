@@ -11,6 +11,7 @@
         <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
         <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
         <ApplicationManifest>app.manifest</ApplicationManifest>
+        <ApplicationIcon>Assets\trayicon.ico</ApplicationIcon>
         <Nullable>enable</Nullable>
         <ImplicitUsings>disable</ImplicitUsings>
     </PropertyGroup>
