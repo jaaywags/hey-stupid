@@ -51,6 +51,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Extract version
         id: version
         shell: pwsh
@@ -71,29 +74,40 @@ jobs:
         run: dotnet restore
 
       - name: Publish
-        run: >
-          dotnet publish HeyStupid/HeyStupid.csproj
-          --configuration Release
-          --runtime win-x64
-          --self-contained true
-          --output ./publish
-          -p:PublishSingleFile=false
-          -p:WindowsAppSDKSelfContained=true
-          -p:Platform=x64
+        shell: pwsh
+        run: |
+          msbuild HeyStupid/HeyStupid.csproj `
+            -t:Publish `
+            -p:Configuration=Release `
+            -p:Platform=x64 `
+            -p:RuntimeIdentifier=win-x64 `
+            -p:SelfContained=true `
+            -p:WindowsAppSDKSelfContained=true `
+            -p:PublishDir=${{ github.workspace }}\publish\
 
-      - name: List publish output
+          # The publish step drops HeyStupid.pri - copy it from the build output
+          $buildDir = "HeyStupid\bin\x64\Release\net10.0-windows10.0.22621.0\win-x64"
+          $priFile = Join-Path $buildDir "HeyStupid.pri"
+          if (Test-Path $priFile) {
+            Copy-Item $priFile -Destination .\publish\ -Force
+            Write-Host "Copied HeyStupid.pri from build output"
+          } else {
+            Write-Error "HeyStupid.pri not found in build output!"
+          }
+
+      - name: Verify publish output
         shell: pwsh
         run: |
           Write-Host "=== PRI files ==="
           Get-ChildItem ./publish -Filter *.pri -Recurse | ForEach-Object { $_.FullName }
           Write-Host "=== XBF files ==="
           Get-ChildItem ./publish -Filter *.xbf -Recurse | ForEach-Object { $_.FullName }
-          Write-Host "=== EXE/DLL count ==="
-          $exes = (Get-ChildItem ./publish -Filter *.exe).Count
-          $dlls = (Get-ChildItem ./publish -Filter *.dll -Recurse).Count
-          Write-Host "$exes exe files, $dlls dll files"
-          Write-Host "=== Root files ==="
-          Get-ChildItem ./publish -File | Select-Object Name, Length | Format-Table
+          Write-Host "=== Key files ==="
+          $check = @("HeyStupid.exe","HeyStupid.dll","HeyStupid.pri","Microsoft.ui.xaml.dll")
+          foreach ($f in $check) {
+            $found = Test-Path "./publish/$f"
+            Write-Host "$f : $found"
+          }
 
       - name: Install WiX Toolset
         run: dotnet tool install --global wix --version 7.0.0
