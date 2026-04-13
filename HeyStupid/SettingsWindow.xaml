@@ -39,6 +39,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0" Spacing="2">
@@ -51,6 +52,13 @@
                                 </StackPanel>
 
                                 <Button Grid.Column="1"
+                                        Click="EditSource_Click"
+                                        ToolTipService.ToolTip="Edit folder"
+                                        Background="Transparent" BorderThickness="0">
+                                    <FontIcon Glyph="&#xE70F;" FontSize="14" />
+                                </Button>
+
+                                <Button Grid.Column="2"
                                         Click="RemoveSource_Click"
                                         ToolTipService.ToolTip="Remove folder"
                                         Background="Transparent" BorderThickness="0">
