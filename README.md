@@ -2,8 +2,7 @@
 
 A persistent, no-nonsense reminder app for Windows that won't let you forget things. Built with WinUI 3 and .NET 10.
 
-<img width="706" height="698" alt="image" src="https://github.com/user-attachments/assets/739402e5-093f-4f09-b147-956ed9bd8829" />
-
+<img width="706" height="593" alt="image" src="https://github.com/user-attachments/assets/92fc8cef-7fb4-4fc1-848f-c63616969866" />
 
 ## Features
 
