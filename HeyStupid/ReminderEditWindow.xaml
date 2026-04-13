@@ -65,6 +65,23 @@
                            SpinButtonPlacementMode="Compact"
                            Visibility="Collapsed" />
 
+                <!-- Active Hours (for EveryNMinutes / Hourly) -->
+                <StackPanel x:Name="ActiveHoursPanel" Spacing="8" Visibility="Collapsed">
+                    <ToggleSwitch x:Name="ActiveHoursToggle"
+                                  Header="Only between certain hours"
+                                  Toggled="ActiveHoursToggle_Toggled" />
+                    <StackPanel x:Name="ActiveHoursTimes" Spacing="12" Visibility="Collapsed">
+                        <TimePicker x:Name="ActiveHoursStartPicker"
+                                    Header="From"
+                                    HorizontalAlignment="Stretch"
+                                    ClockIdentifier="12HourClock" />
+                        <TimePicker x:Name="ActiveHoursEndPicker"
+                                    Header="Until"
+                                    HorizontalAlignment="Stretch"
+                                    ClockIdentifier="12HourClock" />
+                    </StackPanel>
+                </StackPanel>
+
                 <!-- Days of Week (for Weekly) -->
                 <StackPanel x:Name="DaysPanel" Spacing="8" Visibility="Collapsed">
                     <TextBlock Text="Days" Style="{StaticResource CaptionTextBlockStyle}" />

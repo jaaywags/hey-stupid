@@ -51,6 +51,16 @@ namespace HeyStupid.Models
         public Guid? CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
 
+        // Active hours window (applies to EveryNMinutes / Hourly recurrences).
+        // When ActiveHoursEnabled is true, reminders only fire if the time-of-day
+        // is within [ActiveHoursStart, ActiveHoursEnd). A start greater than the end
+        // means the window spans midnight (e.g., 22:00-06:00).
+        public bool ActiveHoursEnabled { get; set; }
+        public int ActiveHoursStartHour { get; set; } = 8;
+        public int ActiveHoursStartMinute { get; set; }
+        public int ActiveHoursEndHour { get; set; } = 17;
+        public int ActiveHoursEndMinute { get; set; }
+
         // Acknowledgment
         public bool RequireAcknowledgment { get; set; } = true;
         public int MaxRetries { get; set; } = 3;

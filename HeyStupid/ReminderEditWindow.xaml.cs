@@ -75,6 +75,8 @@ namespace HeyStupid
             RecurrenceBox.SelectedIndex = 0;
             StartDatePicker.Date = DateTimeOffset.Now;
             TimePicker.Time = new TimeSpan(9, 0, 0);
+            ActiveHoursStartPicker.Time = new TimeSpan(8, 0, 0);
+            ActiveHoursEndPicker.Time = new TimeSpan(17, 0, 0);
             UpdateFieldVisibility();
         }
 
@@ -114,6 +116,10 @@ namespace HeyStupid
             ThuToggle.IsChecked = r.RecurrenceDays.HasFlag(DaysOfWeek.Thursday);
             FriToggle.IsChecked = r.RecurrenceDays.HasFlag(DaysOfWeek.Friday);
             SatToggle.IsChecked = r.RecurrenceDays.HasFlag(DaysOfWeek.Saturday);
+
+            ActiveHoursToggle.IsOn = r.ActiveHoursEnabled;
+            ActiveHoursStartPicker.Time = new TimeSpan(r.ActiveHoursStartHour, r.ActiveHoursStartMinute, 0);
+            ActiveHoursEndPicker.Time = new TimeSpan(r.ActiveHoursEndHour, r.ActiveHoursEndMinute, 0);
 
             AckToggle.IsOn = r.RequireAcknowledgment;
             MaxRetriesBox.Value = r.MaxRetries;
@@ -169,7 +175,22 @@ namespace HeyStupid
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+            var supportsActiveHours = recurrence == RecurrenceType.EveryNMinutes
+                || recurrence == RecurrenceType.Hourly;
+            ActiveHoursPanel.Visibility = supportsActiveHours ? Visibility.Visible : Visibility.Collapsed;
+            ActiveHoursTimes.Visibility = supportsActiveHours && ActiveHoursToggle.IsOn
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
             DateTimePanel.Visibility = Visibility.Visible;
+        }
+
+        private void ActiveHoursToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (ActiveHoursTimes != null)
+            {
+                UpdateFieldVisibility();
+            }
         }
 
         private void RecurrenceBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -208,9 +229,26 @@ namespace HeyStupid
             var selectedTime = TimePicker.Time;
             var nextDue = selectedDate.Add(selectedTime);
 
+            var supportsActiveHours = recurrence == RecurrenceType.EveryNMinutes
+                || recurrence == RecurrenceType.Hourly;
+            var probe = new Reminder
+            {
+                RecurrenceType = recurrence,
+                RecurrenceInterval = (int)IntervalBox.Value,
+                RecurrenceDays = GetSelectedDays(),
+                ReminderHour = selectedTime.Hours,
+                ReminderMinute = selectedTime.Minutes,
+                ReminderDayOfMonth = (int)DayOfMonthBox.Value,
+                ActiveHoursEnabled = supportsActiveHours && ActiveHoursToggle.IsOn,
+                ActiveHoursStartHour = ActiveHoursStartPicker.Time.Hours,
+                ActiveHoursStartMinute = ActiveHoursStartPicker.Time.Minutes,
+                ActiveHoursEndHour = ActiveHoursEndPicker.Time.Hours,
+                ActiveHoursEndMinute = ActiveHoursEndPicker.Time.Minutes
+            };
+
             if (nextDue > now)
             {
-                return nextDue;
+                return RecurrenceCalculator.ClampToActiveHours(probe, nextDue);
             }
 
             if (recurrence == RecurrenceType.Once)
@@ -218,15 +256,7 @@ namespace HeyStupid
                 return nextDue;
             }
 
-            return RecurrenceCalculator.CalculateInitialDue(new Reminder
-            {
-                RecurrenceType = recurrence,
-                RecurrenceInterval = (int)IntervalBox.Value,
-                RecurrenceDays = GetSelectedDays(),
-                ReminderHour = selectedTime.Hours,
-                ReminderMinute = selectedTime.Minutes,
-                ReminderDayOfMonth = (int)DayOfMonthBox.Value
-            });
+            return RecurrenceCalculator.CalculateInitialDue(probe);
         }
 
         private Guid ResolveSourceId()
@@ -259,6 +289,10 @@ namespace HeyStupid
             var recurrence = GetSelectedRecurrence();
             var selectedCategory = CategoryBox.SelectedItem as ReminderCategory;
 
+            var supportsActiveHours = recurrence == RecurrenceType.EveryNMinutes
+                || recurrence == RecurrenceType.Hourly;
+            var activeHoursEnabled = supportsActiveHours && ActiveHoursToggle.IsOn;
+
             Result = new Reminder
             {
                 Id = _existing?.Id ?? Guid.NewGuid(),
@@ -271,6 +305,11 @@ namespace HeyStupid
                 ReminderHour = TimePicker.Time.Hours,
                 ReminderMinute = TimePicker.Time.Minutes,
                 ReminderDayOfMonth = (int)DayOfMonthBox.Value,
+                ActiveHoursEnabled = activeHoursEnabled,
+                ActiveHoursStartHour = ActiveHoursStartPicker.Time.Hours,
+                ActiveHoursStartMinute = ActiveHoursStartPicker.Time.Minutes,
+                ActiveHoursEndHour = ActiveHoursEndPicker.Time.Hours,
+                ActiveHoursEndMinute = ActiveHoursEndPicker.Time.Minutes,
                 CategoryId = selectedCategory?.Id,
                 CategoryName = selectedCategory?.Name ?? string.Empty,
                 RequireAcknowledgment = AckToggle.IsOn,

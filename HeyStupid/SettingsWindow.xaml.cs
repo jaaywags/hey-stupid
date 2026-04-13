@@ -18,6 +18,7 @@ namespace HeyStupid
     public sealed partial class SettingsWindow : Window
     {
         private readonly SettingsService _settingsService;
+        private readonly Dictionary<Guid, FolderEditWindow> _folderEditWindows = new();
         private bool _suppressCategoryFolderChange;
 
         public bool SourcesChanged { get; private set; }
@@ -169,108 +170,58 @@ namespace HeyStupid
             RefreshCategoriesList();
         }
 
-        private async void EditSource_Click(object sender, RoutedEventArgs e)
+        private void EditSource_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.DataContext is ReminderSource source)
             {
-                var nameBox = new TextBox
+                if (_folderEditWindows.ContainsKey(source.Id))
                 {
-                    Header = "Name",
-                    Text = source.Name
-                };
-
-                var pathBox = new TextBox
-                {
-                    Header = "Folder",
-                    Text = source.FolderPath,
-                    IsReadOnly = true
-                };
-
-                var browseButton = new Button
-                {
-                    Content = "Change Folder...",
-                    HorizontalAlignment = HorizontalAlignment.Left
-                };
-
-                browseButton.Click += async (s, args) =>
-                {
-                    var picker = new FolderPicker();
-                    picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-                    picker.FileTypeFilter.Add("*");
-
-                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-                    WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                    var picked = await picker.PickSingleFolderAsync();
-                    if (picked != null)
-                    {
-                        pathBox.Text = picked.Path;
-                    }
-                };
-
-                var panel = new StackPanel { Spacing = 12 };
-                panel.Children.Add(nameBox);
-                panel.Children.Add(pathBox);
-                panel.Children.Add(browseButton);
-
-                var dialog = new ContentDialog
-                {
-                    Title = "Edit Reminder Folder",
-                    Content = panel,
-                    PrimaryButtonText = "Save",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Primary,
-                    XamlRoot = Content.XamlRoot
-                };
-
-                var result = await dialog.ShowAsync();
-                if (result != ContentDialogResult.Primary)
-                {
+                    _folderEditWindows[source.Id].Activate();
                     return;
                 }
 
-                var newName = nameBox.Text?.Trim() ?? string.Empty;
-                var newPath = pathBox.Text?.Trim() ?? string.Empty;
-
-                if (string.IsNullOrWhiteSpace(newName) || string.IsNullOrWhiteSpace(newPath))
+                var editWindow = new FolderEditWindow(source, _settingsService.Settings.ReminderSources);
+                _folderEditWindows[source.Id] = editWindow;
+                editWindow.Closed += async (s, args) =>
                 {
-                    return;
-                }
-
-                var pathChanged = PathsEqual(newPath, source.FolderPath) == false;
-                var nameChanged = string.Equals(newName, source.Name, StringComparison.Ordinal) == false;
-
-                if (pathChanged == false && nameChanged == false)
-                {
-                    return;
-                }
-
-                if (pathChanged)
-                {
-                    var conflict = _settingsService.Settings.ReminderSources
-                        .FirstOrDefault(s => s.Id != source.Id && PathsEqual(s.FolderPath, newPath));
-                    if (conflict != null)
-                    {
-                        await ShowErrorAsync("Folder Already In Use",
-                            $"The folder \"{newPath}\" is already used by \"{conflict.Name}\". Pick a different folder.").ConfigureAwait(true);
-                        return;
-                    }
-
-                    var moved = await MoveRemindersFileAsync(source.FolderPath, newPath).ConfigureAwait(true);
-                    if (moved == false)
+                    _folderEditWindows.Remove(source.Id);
+                    if (editWindow.Saved == false)
                     {
                         return;
                     }
-                }
 
-                source.Name = newName;
-                source.FolderPath = newPath;
-
-                await _settingsService.UpdateSourceAsync(source).ConfigureAwait(true);
-                SourcesChanged = true;
-                RefreshSourcesList();
-                RefreshCategoriesList();
+                    await ApplyFolderEditAsync(source, editWindow.NewName, editWindow.NewPath).ConfigureAwait(true);
+                };
+                editWindow.Activate();
             }
+        }
+
+        private async Task ApplyFolderEditAsync(ReminderSource source, string newName, string newPath)
+        {
+            var pathChanged = PathsEqual(newPath, source.FolderPath) == false;
+            var nameChanged = string.Equals(newName, source.Name, StringComparison.Ordinal) == false;
+
+            if (pathChanged == false && nameChanged == false)
+            {
+                return;
+            }
+
+            if (pathChanged)
+            {
+                var moved = await MoveRemindersFileAsync(source.FolderPath, newPath).ConfigureAwait(true);
+                if (moved == false)
+                {
+                    return;
+                }
+            }
+
+            source.Name = newName;
+            source.FolderPath = newPath;
+
+            await _settingsService.UpdateSourceAsync(source).ConfigureAwait(true);
+            SourcesChanged = true;
+            RefreshSourcesList();
+            RefreshCategoriesList();
         }
 
         private async Task<bool> MoveRemindersFileAsync(string oldFolder, string newFolder)

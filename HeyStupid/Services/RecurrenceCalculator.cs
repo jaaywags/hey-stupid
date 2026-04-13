@@ -1,6 +1,7 @@
 namespace HeyStupid.Services
 {
     using System;
+    using System.Collections.Generic;
     using HeyStupid.Models;
 
     public static class RecurrenceCalculator
@@ -13,10 +14,10 @@ namespace HeyStupid.Services
                     return null;
 
                 case RecurrenceType.EveryNMinutes:
-                    return from.AddMinutes(reminder.RecurrenceInterval);
+                    return ClampToActiveHours(reminder, from.AddMinutes(reminder.RecurrenceInterval));
 
                 case RecurrenceType.Hourly:
-                    return from.AddHours(reminder.RecurrenceInterval);
+                    return ClampToActiveHours(reminder, from.AddHours(reminder.RecurrenceInterval));
 
                 case RecurrenceType.Daily:
                 {
@@ -93,10 +94,10 @@ namespace HeyStupid.Services
             switch (reminder.RecurrenceType)
             {
                 case RecurrenceType.EveryNMinutes:
-                    return now.AddMinutes(reminder.RecurrenceInterval);
+                    return ClampToActiveHours(reminder, now.AddMinutes(reminder.RecurrenceInterval));
 
                 case RecurrenceType.Hourly:
-                    return now.AddHours(reminder.RecurrenceInterval);
+                    return ClampToActiveHours(reminder, now.AddHours(reminder.RecurrenceInterval));
 
                 case RecurrenceType.Once:
                 case RecurrenceType.Daily:
@@ -145,6 +146,115 @@ namespace HeyStupid.Services
                 default:
                     return now.AddHours(1);
             }
+        }
+
+        /// <summary>
+        /// Walks a reminder's recurrence forward and yields every fire time that falls within
+        /// [rangeStart, rangeEnd]. Enumeration is capped at maxOccurrences so high-frequency
+        /// recurrences can't run unbounded.
+        /// </summary>
+        public static IEnumerable<DateTime> EnumerateOccurrences(
+            Reminder reminder,
+            DateTime rangeStart,
+            DateTime rangeEnd,
+            int maxOccurrences = 5000)
+        {
+            if (rangeEnd < rangeStart)
+            {
+                yield break;
+            }
+
+            if (reminder.RecurrenceType == RecurrenceType.Once)
+            {
+                if (reminder.NextDue.HasValue
+                    && reminder.NextDue.Value >= rangeStart
+                    && reminder.NextDue.Value <= rangeEnd)
+                {
+                    yield return reminder.NextDue.Value;
+                }
+                yield break;
+            }
+
+            var cursor = reminder.NextDue ?? rangeStart;
+            var produced = 0;
+            var safety = 0;
+
+            // Fast-forward past rangeStart without emitting, using CalculateNextDue so active
+            // hours / weekly day masks / etc. are honored exactly like the scheduler does.
+            while (cursor < rangeStart && safety++ < maxOccurrences)
+            {
+                var next = CalculateNextDue(reminder, cursor);
+                if (next == null || next.Value <= cursor)
+                {
+                    yield break;
+                }
+                cursor = next.Value;
+            }
+
+            while (cursor <= rangeEnd && produced < maxOccurrences)
+            {
+                if (cursor >= rangeStart)
+                {
+                    yield return cursor;
+                    produced++;
+                }
+
+                var next = CalculateNextDue(reminder, cursor);
+                if (next == null || next.Value <= cursor)
+                {
+                    yield break;
+                }
+                cursor = next.Value;
+            }
+        }
+
+        public static DateTime ClampToActiveHours(Reminder reminder, DateTime candidate)
+        {
+            if (reminder.ActiveHoursEnabled == false)
+            {
+                return candidate;
+            }
+
+            var startMinutes = NormalizeMinuteOfDay(reminder.ActiveHoursStartHour, reminder.ActiveHoursStartMinute);
+            var endMinutes = NormalizeMinuteOfDay(reminder.ActiveHoursEndHour, reminder.ActiveHoursEndMinute);
+
+            // Degenerate window: treat as "always active" so we never block forever.
+            if (startMinutes == endMinutes)
+            {
+                return candidate;
+            }
+
+            var candidateMinutes = candidate.Hour * 60 + candidate.Minute;
+            var overnight = startMinutes > endMinutes;
+
+            bool inWindow = overnight
+                ? candidateMinutes >= startMinutes || candidateMinutes < endMinutes
+                : candidateMinutes >= startMinutes && candidateMinutes < endMinutes;
+
+            if (inWindow)
+            {
+                return candidate;
+            }
+
+            // Push forward to the next start-of-window.
+            var startToday = candidate.Date
+                .AddHours(reminder.ActiveHoursStartHour)
+                .AddMinutes(reminder.ActiveHoursStartMinute);
+
+            if (overnight)
+            {
+                // Overnight window: only reachable hole is [endMinutes, startMinutes) on the same day.
+                return startToday;
+            }
+
+            return candidateMinutes < startMinutes ? startToday : startToday.AddDays(1);
+        }
+
+        private static int NormalizeMinuteOfDay(int hour, int minute)
+        {
+            var h = Math.Clamp(hour, 0, 23);
+            var m = Math.Clamp(minute, 0, 59);
+            return h * 60 + m;
         }
 
         public static DaysOfWeek ToDaysOfWeek(DayOfWeek day)

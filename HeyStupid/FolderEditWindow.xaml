@@ -1,0 +1,56 @@
+<Window
+    x:Class="HeyStupid.FolderEditWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Edit Folder">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto"
+                      Padding="28,24,28,12">
+            <StackPanel Spacing="16" MaxWidth="480">
+
+                <TextBox x:Name="NameBox"
+                         Header="Name"
+                         PlaceholderText="e.g., IT Team, Finance, Personal" />
+
+                <TextBox x:Name="PathBox"
+                         Header="Folder"
+                         IsReadOnly="True" />
+
+                <Button x:Name="BrowseButton"
+                        Content="Change Folder..."
+                        HorizontalAlignment="Left"
+                        Click="BrowseButton_Click" />
+
+                <TextBlock x:Name="ErrorText"
+                           Visibility="Collapsed"
+                           TextWrapping="Wrap"
+                           Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                           Style="{StaticResource CaptionTextBlockStyle}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Padding="28,12,28,20" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0"
+                    Content="Cancel"
+                    HorizontalAlignment="Stretch"
+                    Height="36"
+                    Click="CancelButton_Click" />
+            <Button Grid.Column="1"
+                    Content="Save"
+                    Style="{StaticResource AccentButtonStyle}"
+                    HorizontalAlignment="Stretch"
+                    Height="36"
+                    Click="SaveButton_Click" />
+        </Grid>
+    </Grid>
+</Window>

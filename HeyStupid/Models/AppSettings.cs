@@ -16,6 +16,7 @@ namespace HeyStupid.Models
         public bool StartWithWindows { get; set; } = true;
         public int DefaultMaxRetries { get; set; } = 3;
         public int DefaultRetryIntervalMinutes { get; set; } = 5;
+        public HomeView HomeView { get; set; } = HomeView.List;
 
         public void EnsureDefaultSource()
         {
