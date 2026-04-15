@@ -71,7 +71,7 @@ jobs:
           echo "Version: $version"
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore HeyStupid/HeyStupid.csproj -r win-x64 -p:Platform=x64
 
       - name: Publish
         shell: pwsh
@@ -83,7 +83,8 @@ jobs:
             -p:RuntimeIdentifier=win-x64 `
             -p:SelfContained=true `
             -p:WindowsAppSDKSelfContained=true `
-            -p:PublishDir=${{ github.workspace }}\publish\
+            -p:PublishDir=${{ github.workspace }}\publish\ `
+            -restore
 
           # The publish step drops HeyStupid.pri - copy it from the build output
           $buildDir = "HeyStupid\bin\x64\Release\net10.0-windows10.0.22621.0\win-x64"
