@@ -10,9 +10,11 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="ContentScroller" Grid.Row="0" VerticalScrollBarVisibility="Auto"
                       Padding="28,24,28,12">
-            <StackPanel Spacing="16" MaxWidth="480">
+            <StackPanel Spacing="16" MaxWidth="480"
+                        Background="Transparent"
+                        PointerPressed="ClearFocus_PointerPressed">
 
                 <!-- Category -->
                 <ComboBox x:Name="CategoryBox"
@@ -117,9 +119,9 @@
 
                 <StackPanel x:Name="AckSettings" Spacing="12">
                     <NumberBox x:Name="MaxRetriesBox"
-                               Header="Nag up to N times"
+                               Header="Nag up to N times (0 = no nagging)"
                                Value="3"
-                               Minimum="1"
+                               Minimum="0"
                                Maximum="50"
                                SpinButtonPlacementMode="Compact" />
 
@@ -134,7 +136,9 @@
         </ScrollViewer>
 
         <!-- Save / Cancel -->
-        <Grid Grid.Row="1" Padding="28,12,28,20" ColumnSpacing="12">
+        <Grid Grid.Row="1" Padding="28,12,28,20" ColumnSpacing="12"
+              Background="Transparent"
+              PointerPressed="ClearFocus_PointerPressed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />

@@ -8,6 +8,7 @@ namespace HeyStupid
     using Microsoft.UI.Windowing;
     using Microsoft.UI.Xaml;
     using Microsoft.UI.Xaml.Controls;
+    using Microsoft.UI.Xaml.Input;
     using Windows.Graphics;
     using Windows.Storage.Pickers;
 
@@ -102,6 +103,11 @@ namespace HeyStupid
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void ClearFocus_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            ContentScroller.Focus(FocusState.Programmatic);
         }
 
         private void ShowError(string message)
