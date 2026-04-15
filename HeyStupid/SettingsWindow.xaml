@@ -153,8 +153,8 @@
                 <TextBlock Text="Defaults for New Reminders"
                            Style="{StaticResource SubtitleTextBlockStyle}" />
                 <NumberBox x:Name="DefaultRetriesBox"
-                           Header="Default nag count"
-                           Minimum="1"
+                           Header="Default nag count (0 = no nagging)"
+                           Minimum="0"
                            Maximum="50"
                            SpinButtonPlacementMode="Compact"
                            ValueChanged="DefaultRetriesBox_ValueChanged" />
