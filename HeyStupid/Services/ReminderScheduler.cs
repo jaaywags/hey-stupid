@@ -57,7 +57,7 @@ namespace HeyStupid.Services
             reminder.IsWaitingForAcknowledgment = false;
             reminder.CurrentRetryCount = 0;
             reminder.NextRetry = null;
-            reminder.NextDue = RecurrenceCalculator.CalculateNextDue(reminder, DateTime.Now);
+            reminder.NextDue = RecurrenceCalculator.CalculateNextFutureDue(reminder);
 
             if (reminder.RecurrenceType == RecurrenceType.Once)
             {
@@ -81,6 +81,23 @@ namespace HeyStupid.Services
 
             foreach (var reminder in reminders.Where(r => r.IsActive))
             {
+                // A recurring reminder that's still marked "waiting for ack" when its next
+                // scheduled occurrence has come due shouldn't stay stuck forever (which can
+                // happen when the user closes the popup without acking, especially with
+                // MaxRetries=0).  Auto-advance past the stuck occurrence to the most recent
+                // past one so the fire branch below picks it up as a fresh occurrence.
+                if (reminder.IsWaitingForAcknowledgment)
+                {
+                    var advanced = RecurrenceCalculator.CalculateMostRecentPastDue(reminder, now);
+                    if (advanced.HasValue)
+                    {
+                        reminder.IsWaitingForAcknowledgment = false;
+                        reminder.CurrentRetryCount = 0;
+                        reminder.NextRetry = null;
+                        reminder.NextDue = advanced.Value;
+                    }
+                }
+
                 if (reminder.IsWaitingForAcknowledgment)
                 {
                     if (reminder.NextRetry.HasValue

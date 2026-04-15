@@ -14,10 +14,10 @@ namespace HeyStupid.Services
                     return null;
 
                 case RecurrenceType.EveryNMinutes:
-                    return ClampToActiveHours(reminder, from.AddMinutes(reminder.RecurrenceInterval));
+                    return ClampToActiveHours(reminder, TruncateSeconds(from.AddMinutes(reminder.RecurrenceInterval)));
 
                 case RecurrenceType.Hourly:
-                    return ClampToActiveHours(reminder, from.AddHours(reminder.RecurrenceInterval));
+                    return ClampToActiveHours(reminder, TruncateSeconds(from.AddHours(reminder.RecurrenceInterval)));
 
                 case RecurrenceType.Daily:
                 {
@@ -94,10 +94,10 @@ namespace HeyStupid.Services
             switch (reminder.RecurrenceType)
             {
                 case RecurrenceType.EveryNMinutes:
-                    return ClampToActiveHours(reminder, now.AddMinutes(reminder.RecurrenceInterval));
+                    return ClampToActiveHours(reminder, TruncateSeconds(now.AddMinutes(reminder.RecurrenceInterval)));
 
                 case RecurrenceType.Hourly:
-                    return ClampToActiveHours(reminder, now.AddHours(reminder.RecurrenceInterval));
+                    return ClampToActiveHours(reminder, TruncateSeconds(now.AddHours(reminder.RecurrenceInterval)));
 
                 case RecurrenceType.Once:
                 case RecurrenceType.Daily:
@@ -250,11 +250,82 @@ namespace HeyStupid.Services
             return candidateMinutes < startMinutes ? startToday : startToday.AddDays(1);
         }
 
+        private static DateTime TruncateSeconds(DateTime dt)
+        {
+            return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, 0, dt.Kind);
+        }
+
         private static int NormalizeMinuteOfDay(int hour, int minute)
         {
             var h = Math.Clamp(hour, 0, 23);
             var m = Math.Clamp(minute, 0, 59);
             return h * 60 + m;
+        }
+
+        /// <summary>
+        /// Advances from the reminder's last scheduled time (NextDue) rather than from "now",
+        /// stepping forward through any occurrences that have already lapsed, until a future
+        /// occurrence is found.  This keeps recurring reminders on their original cadence even
+        /// when acknowledgment is delayed.
+        /// </summary>
+        public static DateTime? CalculateNextFutureDue(Reminder reminder)
+        {
+            return CalculateNextFutureDue(reminder, DateTime.Now);
+        }
+
+        /// <summary>
+        /// Walks forward from NextDue and returns the most recent occurrence that is still
+        /// at or before "now" — used to auto-advance a recurring reminder that got stuck
+        /// waiting for an acknowledgment the user never gave.  Returns null if no newer
+        /// occurrence has come due yet (or the reminder is non-recurring).
+        /// </summary>
+        public static DateTime? CalculateMostRecentPastDue(Reminder reminder, DateTime now)
+        {
+            if (reminder.RecurrenceType == RecurrenceType.Once || reminder.NextDue.HasValue == false)
+            {
+                return null;
+            }
+
+            var cursor = reminder.NextDue.Value;
+            DateTime? mostRecent = null;
+
+            for (int i = 0; i < 5000; i++)
+            {
+                var next = CalculateNextDue(reminder, cursor);
+                if (next == null || next.Value > now)
+                {
+                    break;
+                }
+                mostRecent = next;
+                cursor = next.Value;
+            }
+
+            return mostRecent;
+        }
+
+        /// <summary>
+        /// Overload that accepts "now" explicitly so callers (and tests) can control the clock.
+        /// </summary>
+        public static DateTime? CalculateNextFutureDue(Reminder reminder, DateTime now)
+        {
+            var cursor = reminder.NextDue ?? now;
+
+            for (int i = 0; i < 5000; i++)
+            {
+                var next = CalculateNextDue(reminder, cursor);
+                if (next == null)
+                {
+                    return null;
+                }
+                if (next.Value > now)
+                {
+                    return next.Value;
+                }
+                cursor = next.Value;
+            }
+
+            // Safety fallback — should never be reached for reasonable intervals.
+            return CalculateNextDue(reminder, now);
         }
 
         public static DaysOfWeek ToDaysOfWeek(DayOfWeek day)
